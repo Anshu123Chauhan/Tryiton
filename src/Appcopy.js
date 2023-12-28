@@ -11,7 +11,39 @@ function App() {
   var camera = null;
 
   const [lipColor, setLipColor] = useState("#da0533");
+  const [eyeColor, setEyeColor] = useState("#30FF30");
 
+  function fillArea(ctx, landmarks, indices, { color }) {
+    // Check if landmarks and indices are valid
+    if (landmarks && landmarks.length > 0 && indices && indices.length > 1) {
+      const firstIndices = indices[0];
+      const secondIndices = indices[1];
+      // Check if both indices from the arrays are within the landmarks bounds
+      if (
+        firstIndices[0] < landmarks.length &&
+        firstIndices[1] < landmarks.length &&
+        secondIndices[0] < landmarks.length &&
+        secondIndices[1] < landmarks.length
+      ) {
+        const startPoint1 = landmarks[firstIndices[0]];
+        const startPoint2 = landmarks[firstIndices[1]];
+        const endPoint1 = landmarks[secondIndices[0]];
+        const endPoint2 = landmarks[secondIndices[1]];
+        ctx.beginPath();
+        ctx.moveTo(startPoint1.x, startPoint1.y);
+        ctx.lineTo(startPoint2.x, startPoint2.y);
+        ctx.lineTo(endPoint2.x, endPoint2.y);
+        ctx.lineTo(endPoint1.x, endPoint1.y);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        console.error("Invalid indices or landmarks data format.");
+      }
+    } else {
+      console.error("Invalid landmarks or indices data.");
+    }
+  }
   function onResults(results) {
     // console.log(Facemesh);
     // const video = webcamRef.current.video;
@@ -24,7 +56,6 @@ function App() {
 
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext("2d");
-
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.drawImage(
@@ -34,77 +65,63 @@ function App() {
       canvasElement.width,
       canvasElement.height
     );
-
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
-        // console.log("landmarks", landmarks);
         // connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
         //   color: "#C0C0C070",
         //   lineWidth: 1,
         // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, {
-        //   color: "#FF3030",
-        //   // color: eyeColor,
-        // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, {
-        //   color: "#FF3030",
-        // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, {
-        //   // color: "#30FF30",
-        //   color: eyeColor,
-        // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, {
-        //   color: "#30FF30",
-        // });
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, {
+          color: "#FF3030",
+        });
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, {
+          color: "#FF3030",
+        });
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, {
+          // color: "#30FF30",
+          color: eyeColor,
+        });
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, {
+          color: "#30FF30",
+        });
         // connect(canvasCtx, landmarks, Facemesh.FACEMESH_FACE_OVAL, {
         //   color: "#E0E0E0",
         // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
+          color: "#00000",
+        });
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
+          color: lipColor,
+        });
+        // fillArea(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
         //   color: lipColor,
         // });
-        console.log("Facemesh_Eye", Facemesh.FACEMESH_LIPS);
 
-        const allNumbers = Facemesh.FACEMESH_LIPS.flat();
-
-        // Use Set to store unique numbers
-        const uniqueNumbersSet = new Set(allNumbers);
-
-        // Convert Set back to an array
-        const uniqueNumbersArray = [...uniqueNumbersSet];
-
-        console.log("uniqueNumbersArray", uniqueNumbersArray);
-
-        const allLipLandmarks = [ [61, 146], [146, 91], [91, 181], [181, 84], [84, 17], [17, 314], [314, 405], [405, 321], [321, 375], [375, 291], [61, 185], [185, 40], [40, 39], [39, 37], [37, 0], [0, 267], [267, 269], [269, 270], [270, 409], [409, 291], [78, 95], [95, 88], [88, 178], [178, 87], [87, 14], [14, 317], [317, 402], [402, 318], [318, 324], [324, 308], [78, 191], [191, 80], [80, 81], [81, 82], [82, 13], [13, 312], [312, 311], [311, 310], [310, 415], [415, 308], ];
-
-        // const lipIndicesUpper = [ 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 185, 40, 39, 37, 0, 267, 269, 270, 409, 415, ];
-
-        // const lipIndicesLower = [ 78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 191, 80, 81, 82, 13, 312, 311, 310, 415, ];
-
-        const lipIndicesUpper = [ 61, 146, 146, 91, 91, 181, 181, 84, 84, 17, 17, 314, 314, 405, 405, 321, 321, 375, 375, 291, 61, 185, 185, 40, 40, 39, 39, 37, 37, 0, 0, 267, 267, 269, 269, 270, 270, 409, 409, 291, 308 ];
-
-        const lipIndicesLower = [ 78, 95, 95, 88, 88, 178, 178, 87, 87, 14, 14, 317, 317, 402, 402, 318, 318, 324, 324, 308, 78, 191, 191, 80, 80, 81, 81, 82, 82, 13, 13, 312, 312, 311, 311, 310, 310, 415, 415, 308 ];
-
-        const lipPath = new Path2D();
-        for (const index of lipIndicesUpper) {
-          lipPath.lineTo(
-            landmarks[index].x * videoWidth,
-            landmarks[index].y * videoHeight
-          );
-        }
-        for (const index of lipIndicesLower.reverse()) {
-          lipPath.lineTo(
-            landmarks[index].x * canvasElement.width,
-            landmarks[index].y * canvasElement.height
-          );
-        }
-        lipPath.closePath();
-
-        canvasCtx.fillStyle = lipColor;
-        canvasCtx.fill(lipPath);
+        // const upperEyeLandmarks = [
+        //   landmarks[263],y
+        //   landmarks[249],
+        //   landmarks[390],
+        //   landmarks[373],
+        //   landmarks[374],
+        //   landmarks[380],
+        //   landmarks[381],
+        //   landmarks[382],
+        // ];
+        // for (let i = 0; i < upperEyeLandmarks.length - 1; i++) {
+        //   const startPoint = upperEyeLandmarks[i];
+        //   const endPoint = upperEyeLandmarks[i + 1];
+        //   canvasCtx.beginPath();
+        //   canvasCtx.moveTo(startPoint.x * videoWidth, startPoint.y * videoHeight);
+        //   canvasCtx.lineTo(endPoint.x * videoWidth, endPoint.y * videoHeight);
+        //   canvasCtx.strokeStyle = "#000"; // Red color
+        //   canvasCtx.lineWidth = 2;
+        //   canvasCtx.stroke();
+        // }
       }
     }
     canvasCtx.restore();
   }
+  // }
 
   // setInterval(())
   useEffect(() => {
@@ -118,7 +135,6 @@ function App() {
       maxNumFaces: 1,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
-      selfieMode: true,
     });
 
     faceMesh.onResults(onResults);
@@ -136,22 +152,19 @@ function App() {
       });
       camera.start();
     }
-  }, [lipColor]);
-
+  }, [lipColor,eyeColor]);
   const myStyles = {
-    display: "flex",
-    position: "absolute",
-    bottom: "10%",
-    left: "20%",
-    width: "50%",
+    display: 'flex',
+    position: 'absolute',
+    bottom: '10%',
+    left: '20%',
+    width: '50%',
   };
-
   return (
     <>
       <center>
         <div className="App">
           <Webcam
-            hidden
             ref={webcamRef}
             style={{
               position: "absolute",
@@ -182,6 +195,14 @@ function App() {
           ></canvas>
         </div>
         <div className="btnContainer" style={myStyles}>
+          <div style={{ position: "absolute", bottom: "10%", left: "45%" }}>
+            <label>Select Eye Color:</label>
+            <input
+              type="color"
+              value={eyeColor}
+              onChange={(e) => setEyeColor(e.target.value)}
+            />
+          </div>
           <div>
             <label>Select Lip Color:</label>
             <input
