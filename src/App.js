@@ -12,8 +12,6 @@ function App() {
   var camera = null;
   const [lipColor, setLipColor] = useState("#A22141");
   const [appmodal, setAppmodel] = useState(false);
-
-
   function adjustColorIntensity(hexColor, intensityFactor) {
     // Remove '#' from the beginning
     hexColor = hexColor.replace('#', '');
@@ -35,11 +33,10 @@ function App() {
     }).join('');
 
     return adjustedHex;
-}
-
-
+  }
   function onResults(results) {
- 
+    // console.log(Facemesh);
+    // const video = webcamRef.current.video;
     const videoWidth = webcamRef.current.video.videoWidth;
     const videoHeight = webcamRef.current.video.videoHeight;
 
@@ -131,6 +128,7 @@ function App() {
     canvasCtx.restore();
   }
   useEffect(() => {
+    console.log('lipcolor', lipColor);
     const faceMesh = new FaceMesh({
       locateFile: (file) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -196,18 +194,18 @@ function App() {
               <div className="live-main">
                   <h2 tabIndex="0" data-radium="true">
                       Choose Try-On Experience</h2>
-                  <button aria-label="enter live camera" onClick={()=>setAppmodel(true)}>
+                  <button type="button" aria-label="enter live camera" onClick={()=>setAppmodel(true)}>
                       <img alt="live" src="live-makeup.png" />
                       <div className="text">Live Makeup
                       </div>
                   </button>
                   <div data-radium="true" className="model-main">
-                      <button aria-label="choose a model">
+                      <button type="button" aria-label="choose a model">
                           <img alt="choose-model" src="choose-model.png" />
                           <div className="text">Choose a Model</div> 
                       </button>
                       <div className="upload-main">
-                          <button aria-label="upload a photo">
+                          <button type="button" aria-label="upload a photo">
                               <img alt="upload" src="img-upload.png" />
                               <div className="text">Upload a Photo</div>
                           </button>
@@ -220,12 +218,12 @@ function App() {
           </div>
           <div className="w-[50%]  text-white font-bold rounded-3xl p-5 m-auto h-[480px] ">
           <label className="text-[#000] block text-[20px]">Choose Color</label>
-          <button style={{ backgroundColor: "#f23b77", border: "1px solid #f23b77", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#f23b77")}></button>
-          <button style={{ backgroundColor: "#BB1A4B", border: "1px solid #BB1A4B", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#BB1A4B")}></button>
-          <button style={{ backgroundColor: "#A11564", border: "1px solid #A11564", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#A11564")}></button>
-          <button style={{ backgroundColor: "#903739", border: "1px solid #903739", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#903739")}></button>
-          <button style={{ backgroundColor: "#EB5494", border: "1px solid #EB5494", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#EB5494")}></button>
-          <button style={{ backgroundColor: "#FF0000", border: "1px solid #FF0000", width: "50px", height: "50px", borderRadius: "100%" }} onClick={() => setLipColor("#FF0000")}></button>
+          <button type="button" style={{ backgroundColor: "#f23b77", border: "1px solid #f23b77", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#f23b77")}></button>
+          <button type="button" style={{ backgroundColor: "#BB1A4B", border: "1px solid #BB1A4B", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#BB1A4B")}></button>
+          <button type="button" style={{ backgroundColor: "#A11564", border: "1px solid #A11564", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#A11564")}></button>
+          <button type="button" style={{ backgroundColor: "#903739", border: "1px solid #903739", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#903739")}></button>
+          <button type="button" style={{ backgroundColor: "#EB5494", border: "1px solid #EB5494", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#EB5494")}></button>
+          <button type="button" style={{ backgroundColor: "#FF0000", border: "1px solid #FF0000", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#FF0000")}></button>
           </div>
         </div>
       </div>
