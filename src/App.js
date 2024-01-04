@@ -4,14 +4,17 @@ import * as Facemesh from "@mediapipe/face_mesh";
 import * as cam from "@mediapipe/camera_utils";
 import { fill } from "@mediapipe/drawing_utils";
 import Webcam from "react-webcam";
-import { AiFillCloseCircle } from "react-icons/ai";
+
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const connect = window.drawConnectors;
   var camera = null;
-  const [lipColor, setLipColor] = useState("#A22141");
+  const [lipColor, setLipColor] = useState("");
   const [appmodal, setAppmodel] = useState(false);
+  const [modelGallery, setModelGallery] = useState(false);
+  const [modelview, setModelview] = useState(false);
+  const [modelimg, setModelimg] = useState("");
   function adjustColorIntensity(hexColor, intensityFactor) {
     // Remove '#' from the beginning
     hexColor = hexColor.replace('#', '');
@@ -35,11 +38,15 @@ function App() {
     return adjustedHex;
   }
   function onResults(results) {
+    console.log(lipColor);
+    const isModelImage = !!modelimg;
     // console.log(Facemesh);
     // const video = webcamRef.current.video;
-    const videoWidth = webcamRef.current.video.videoWidth;
-    const videoHeight = webcamRef.current.video.videoHeight;
-
+    // const videoWidth = webcamRef.current.video.videoWidth;
+    // const videoHeight = webcamRef.current.video.videoHeight;
+    const videoWidth = isModelImage ? "388" : webcamRef.current.video.videoWidth;
+    const videoHeight = isModelImage ? "388" : webcamRef.current.video.videoHeight;
+  console.log(videoHeight)
     // Set canvas width
     canvasRef.current.width = videoWidth;
     canvasRef.current.height = videoHeight;
@@ -59,7 +66,7 @@ function App() {
 
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
-        // console.log("landmarks", landmarks);
+       
         // connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
         //   color: "#C0C0C070",
         //   lineWidth: 1,
@@ -87,7 +94,6 @@ function App() {
      
 
         const allNumbers = Facemesh.FACEMESH_LIPS.flat();
-        
         // Use Set to store unique numbers
         const uniqueNumbersSet = new Set(allNumbers);
 
@@ -107,9 +113,10 @@ function App() {
         const lipIndicesLower = [78, 95, 95, 88, 88, 178, 178, 87, 87, 14, 14, 317, 317, 402, 402, 318, 318, 324, 324, 308, 78, 191, 191, 80, 80, 81, 81, 82, 82, 13, 13, 312, 312, 311, 311, 310, 310, 415, 415, 308];
 
         const lipPath = new Path2D();
+         const multiplier = isModelImage ? 388 : videoWidth;
         for (const index of lipIndicesUpper) {
           lipPath.lineTo(
-            landmarks[index].x * videoWidth,
+            landmarks[index].x * multiplier,
             landmarks[index].y * videoHeight
           );
         }
@@ -120,15 +127,71 @@ function App() {
           );
         }
         lipPath.closePath();
-        const adjustedLipColor = adjustColorIntensity(lipColor, 0.5);
-        canvasCtx.fillStyle = adjustedLipColor;
-        canvasCtx.fill(lipPath);
+        if(lipColor){
+          const adjustedLipColor = adjustColorIntensity(lipColor, 0.66666);
+          canvasCtx.shadowColor = adjustedLipColor; // Shadow color
+          canvasCtx.shadowBlur = 1; // Shadow blur radius
+          canvasCtx.shadowOffsetX = 0; // Horizontal shadow offset
+          canvasCtx.shadowOffsetY = 0; // Vertical shadow offset
+          canvasCtx.fillStyle = adjustedLipColor;
+          canvasCtx.fill(lipPath);
+          canvasCtx.shadowColor = 'transparent';
+          canvasCtx.shadowBlur = 0;
+          canvasCtx.shadowOffsetX = 0;
+          canvasCtx.shadowOffsetY = 0;
+        }
+        
+
       }
     }
     canvasCtx.restore();
   }
+  const modeldemo=(e)=>{
+    setModelview(true);
+    setModelGallery(false);
+    setModelimg(e);
+  }
+  const processImageWithFacemesh = async () => {
+    // Step 1: Load the image
+    const img = new Image();
+    img.src = modelimg;
+  
+    // Wait for the image to load
+    img.onload = async () => {
+      // Step 2: Convert Image to Canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+  
+      // Set canvas dimensions to image dimensions
+      canvas.width = img.width;
+      canvas.height = img.height;
+  
+      // Draw the image onto the canvas
+      ctx.drawImage(img, 0, 0);
+  
+      // Step 3: Send Canvas Image to facemesh
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        },
+      });
+  
+      // Set options for facemesh
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+  
+      faceMesh.onResults(onResults);
+  
+      // Send the canvas image to facemesh
+      await faceMesh.send({ image: canvas });
+    };
+  };
+  
   useEffect(() => {
-    console.log('lipcolor', lipColor);
+ 
     const faceMesh = new FaceMesh({
       locateFile: (file) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -142,7 +205,7 @@ function App() {
     });
 
     faceMesh.onResults(onResults);
-
+  
     if (
       typeof webcamRef.current !== "undefined" &&
       webcamRef.current !== null
@@ -155,75 +218,121 @@ function App() {
       });
       camera.start();
     }
+    
   }, [lipColor]);
-  
+  useEffect(() => {
+    processImageWithFacemesh();
+  },[modelimg,lipColor])
   return (
 
       <div className="App">
-
-
-       
         <div className="p-5 relative w-[100%] h-full  flex">
           <div className="w-[50%]">
-
+            
             {appmodal?
             <>
-            <AiFillCloseCircle  onClick={()=>setAppmodel(false)} style={{height:"30px",width:"30px",float: "right",right: "30px",position: "relative",cursor:"pointer",zIndex:"99999"}}/>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              onClick={()=>setAppmodel(false)}
+              className="h-[30px] w-[30px] right-[30px] relative cursor-pointer float-right z-[99999]"
+              >
+              <path
+              d="M18 6L6 18M6 6L18 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              />
+            </svg>
+
               <Webcam
                 ref={webcamRef}
-                style={{
-                  textAlign: "center",
-                  zindex: 9,
-              
-                }}
-                className="absolute left-[100px] top-[0px] w-[500px] [480px]"
+                className="absolute left-[100px] top-[0px] w-[500px] [480px] z-[9] text-center"
               />
               <canvas
                 ref={canvasRef}
-             
-                style={{
-                  textAlign: "center",
-                  zindex: 9,
-                  
-                }}
-                className="absolute left-[100px] top-[0px]  w-[500px] "
+                className="absolute left-[100px] top-[0px]  w-[500px]  z-[9] text-center "
               ></canvas>
             </>
             :
-            <div className="background w-[70%] text-white font-bold rounded-3xl p-5 m-auto">
-              <div className="live-main">
-                  <h2 tabIndex="0" data-radium="true">
-                      Choose Try-On Experience</h2>
-                  <button type="button" aria-label="enter live camera" onClick={()=>setAppmodel(true)}>
-                      <img alt="live" src="live-makeup.png" />
-                      <div className="text">Live Makeup
-                      </div>
-                  </button>
-                  <div data-radium="true" className="model-main">
-                      <button type="button" aria-label="choose a model">
-                          <img alt="choose-model" src="choose-model.png" />
-                          <div className="text">Choose a Model</div> 
-                      </button>
-                      <div className="upload-main">
-                          <button type="button" aria-label="upload a photo">
-                              <img alt="upload" src="img-upload.png" />
-                              <div className="text">Upload a Photo</div>
-                          </button>
+            <div className="w-[70%] text-white font-bold rounded-3xl p-5 m-auto">
+              {!modelview?
+              <div className="w-[100%] text-white font-bold rounded-3xl p-5 m-auto bg-cover bg-no-repeat bg-center bg-blend-multiply bg-[#302b27] bg-[url('/public/model-bg.jpg')]">
+                <div className="live-main h-full flex flex-col justify-center w-70p mx-[15%]">
+                    <h2 tabIndex="0" data-radium="true" className="text-center mt-0 mb-4 text-18 font-bold font-roboto">
+                        Choose Try-On Experience</h2>
+                    <button type="button" aria-label="enter live camera" onClick={()=>{setAppmodel(true);setModelimg("")}} className="flex flex-col justify-center items-center border-2 border-[#ef3f78] cursor-pointer bg-transparent text-white p-5 w-full rounded-3xl h-[14vw] mb-4">
+                        <img alt="live" src="live-makeup.png" className="mb-3p h-[5.4vw]"/>
+                        <div className="text-center whitespace-normal text-17 leading-22">Live Makeup
+                        </div>
+                    </button>
+                    <div data-radium="true" className="model-main flex items-center justify-between">
+                        <button type="button" aria-label="choose a model"  onClick={()=>setModelGallery(!modelGallery)} className="flex flex-col justify-center items-center border-2 border-[#ef3f78] cursor-pointer bg-transparent text-white p-5 rounded-full w-28 h-28">
+                            <img alt="choose-model" src="choose-model.png" className="h-10 w-12 mb-1"/>
+                            <div  className="text-center text-14 leading-19">Choose a Model</div> 
                           
-                      </div>
-                  </div>
+                
+                        </button>
+                        <div className="upload-main">
+                            <button type="button" aria-label="upload a photo" className="flex flex-col justify-center items-center border-2 border-[#ef3f78] cursor-pointer bg-transparent text-white p-5 rounded-full w-28 h-28">
+                                <img alt="upload" src="img-upload.png" className="h-10 w-12 mb-1"/>
+                                <div className="text-center text-14 leading-19">Upload a Photo</div>
+                            </button>
+                            
+                        </div>
+                    </div>
+                    
+                </div>
+                
+              </div>:
+              <div>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  onClick={()=>setModelview(false)}
+                  className="h-[30px] w-[30px] right-[0px] relative cursor-pointer float-right z-[99999] text-[#000] border-2 border-[#000]"
+                >
+                  <path
+                  d="M18 6L6 18M6 6L18 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  />
+              </svg>
+              <canvas ref={canvasRef} className="max-w-[100%] m-[1%] cursor-pointer border-2 p-3"></canvas>
+
+               {/* <img src={modelimg} alt="model1 image" className="max-w-[100%] m-[1%] cursor-pointer border-2 p-3" /> */}
               </div>
+              }
+              {modelGallery?
+
+              <div className="flex m-auto w-[100%] justify-center rounded-3xl p-[15px] bg-[#EF3F78]">
+                <img src="model1.jpg" alt="model1 image" className="max-w-[30%] m-[1%] cursor-pointer"   onClick={(e)=>{modeldemo("model1.jpg");setLipColor("")}}/>
+                {/* <img src="model2.jpg" alt="model2 image"  className="max-w-[30%]  m-[1%]  cursor-pointer" onClick={(e)=>{modeldemo("model2.jpg");setLipColor("")}}/> */}
+                <img src="model3.jpg" alt="model3 image"  className="max-w-[30%]  m-[1%]  cursor-pointer" onClick={(e)=>{modeldemo("model3.jpg");setLipColor("")}}/>
+                <img src="model4.jpg" alt="model4 image"  className="max-w-[30%]  m-[1%]  cursor-pointer" onClick={(e)=>{modeldemo("model4.jpg");setLipColor("")}}/>
+
+              </div>
+              :""}
             </div>
             }
           </div>
-          <div className="w-[50%]  text-white font-bold rounded-3xl p-5 m-auto h-[480px] ">
+          <div className="w-[50%]  text-white font-bold rounded-3xl p-5  h-[480px] ">
           <label className="text-[#000] block text-[20px]">Choose Color</label>
-          <button type="button" style={{ backgroundColor: "#f23b77", border: "1px solid #f23b77", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#f23b77")}></button>
-          <button type="button" style={{ backgroundColor: "#BB1A4B", border: "1px solid #BB1A4B", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#BB1A4B")}></button>
-          <button type="button" style={{ backgroundColor: "#A11564", border: "1px solid #A11564", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#A11564")}></button>
-          <button type="button" style={{ backgroundColor: "#903739", border: "1px solid #903739", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#903739")}></button>
-          <button type="button" style={{ backgroundColor: "#EB5494", border: "1px solid #EB5494", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#EB5494")}></button>
-          <button type="button" style={{ backgroundColor: "#FF0000", border: "1px solid #FF0000", width: "50px", height: "50px", borderRadius: "100%" }} onClick={(e) => setLipColor("#FF0000")}></button>
+          <button type="button" className="bg-[#f23b77] w-[50px] h-[50px] rounded-[100%] border-1 border-[#f23b77]" onClick={(e) => setLipColor("#f23b77")}></button>
+          <button type="button" className="bg-[#BB1A4B] w-[50px] h-[50px] rounded-[100%] border-1 border-[#BB1A4B]" onClick={(e) => setLipColor("#BB1A4B")}></button>
+          <button type="button" className="bg-[#A11564] w-[50px] h-[50px] rounded-[100%] border-1 border-[#A11564]" onClick={(e) => setLipColor("#A11564")}></button>
+          <button type="button" className="bg-[#903739] w-[50px] h-[50px] rounded-[100%] border-1 border-[#903739]" onClick={(e) => setLipColor("#903739")}></button>
+          <button type="button" className="bg-[#EB5494] w-[50px] h-[50px] rounded-[100%] border-1 border-[#EB5494]" onClick={(e) => setLipColor("#EB5494")}></button>
+          <button type="button" className="bg-[#FF0000] w-[50px] h-[50px] rounded-[100%] border-1 border-[#FF0000]" onClick={(e) => setLipColor("#FF0000")}></button>
           </div>
         </div>
       </div>
