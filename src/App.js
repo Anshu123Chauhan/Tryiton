@@ -15,38 +15,27 @@ function App() {
   const [modelGallery, setModelGallery] = useState(false);
   const [modelview, setModelview] = useState(false);
   const [modelimg, setModelimg] = useState("");
+  
   function adjustColorIntensity(hexColor, intensityFactor) {
-    // Remove '#' from the beginning
     hexColor = hexColor.replace('#', '');
-
-    // Convert hex to RGB
     let r = parseInt(hexColor.substring(0, 2), 16);
     let g = parseInt(hexColor.substring(2, 4), 16);
     let b = parseInt(hexColor.substring(4, 6), 16);
-
-    // Adjust color intensity
     r = Math.min(255, Math.max(0, Math.round(r * intensityFactor)));
     g = Math.min(255, Math.max(0, Math.round(g * intensityFactor)));
     b = Math.min(255, Math.max(0, Math.round(b * intensityFactor)));
-
-    // Convert RGB back to hex
     const adjustedHex = '#' + [r, g, b].map(x => {
         const hex = x.toString(16);
         return hex.length === 1 ? '0' + hex : hex;
     }).join('');
-
     return adjustedHex;
   }
   function onResults(results) {
     console.log(lipColor);
     const isModelImage = !!modelimg;
-    // console.log(Facemesh);
-    // const video = webcamRef.current.video;
-    // const videoWidth = webcamRef.current.video.videoWidth;
-    // const videoHeight = webcamRef.current.video.videoHeight;
-    const videoWidth = isModelImage ? "388" : webcamRef.current.video.videoWidth;
-    const videoHeight = isModelImage ? "388" : webcamRef.current.video.videoHeight;
-  console.log(videoHeight)
+    const videoWidth = isModelImage ? "500" : webcamRef.current.video.videoWidth;
+    const videoHeight = isModelImage ? "500" : webcamRef.current.video.videoHeight;
+
     // Set canvas width
     canvasRef.current.width = videoWidth;
     canvasRef.current.height = videoHeight;
@@ -66,6 +55,7 @@ function App() {
 
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
+        //console.log(Facemesh.FACEMESH_LIPS.flat());
        
         // connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
         //   color: "#C0C0C070",
@@ -94,53 +84,59 @@ function App() {
      
 
         const allNumbers = Facemesh.FACEMESH_LIPS.flat();
-        // Use Set to store unique numbers
-        const uniqueNumbersSet = new Set(allNumbers);
+        
+        // const uniqueNumbersSet = new Set(allNumbers);
 
-        // Convert Set back to an array
-        const uniqueNumbersArray = [...uniqueNumbersSet];
+        // // Convert Set back to an array
+        // const uniqueNumbersArray = [...uniqueNumbersSet];
 
     
 
         const allLipLandmarks = [[61, 146], [146, 91], [91, 181], [181, 84], [84, 17], [17, 314], [314, 405], [405, 321], [321, 375], [375, 291], [61, 185], [185, 40], [40, 39], [39, 37], [37, 0], [0, 267], [267, 269], [269, 270], [270, 409], [409, 291], [78, 95], [95, 88], [88, 178], [178, 87], [87, 14], [14, 317], [317, 402], [402, 318], [318, 324], [324, 308], [78, 191], [191, 80], [80, 81], [81, 82], [82, 13], [13, 312], [312, 311], [311, 310], [310, 415], [415, 308],];
+        //new draw indices
+        const lipIndicesUpper = [ 61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 61,409, 291,308,  415, 310, 311, 312, 13, 82, 81, 80, 191,78];
 
-        // const lipIndicesUpper = [ 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 185, 40, 39, 37, 0, 267, 269, 270, 409, 415, ];
+        const lipIndicesLower = [ 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78];
 
-        // const lipIndicesLower = [ 78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 191, 80, 81, 82, 13, 312, 311, 310, 415, ];
+        //const lipIndicesUpper = [61, 146, 146, 91, 91, 181, 181, 84, 84, 17, 17, 314, 314, 405, 405, 321, 321, 375, 375, 291, 61, 185, 185, 40, 40, 39, 39, 37, 37, 0, 0, 267, 267, 269, 269, 270, 270, 409, 409, 291, 308];
 
-        const lipIndicesUpper = [61, 146, 146, 91, 91, 181, 181, 84, 84, 17, 17, 314, 314, 405, 405, 321, 321, 375, 375, 291, 61, 185, 185, 40, 40, 39, 39, 37, 37, 0, 0, 267, 267, 269, 269, 270, 270, 409, 409, 291, 308];
+        //const lipIndicesLower = [78, 95, 95, 88, 88, 178, 178, 87, 87, 14, 14, 317, 317, 402, 402, 318, 318, 324, 324, 308, 78, 191, 191, 80, 80, 81, 81, 82, 82, 13, 13, 312, 312, 311, 311, 310, 310, 415, 415, 308];
 
-        const lipIndicesLower = [78, 95, 95, 88, 88, 178, 178, 87, 87, 14, 14, 317, 317, 402, 402, 318, 318, 324, 324, 308, 78, 191, 191, 80, 80, 81, 81, 82, 82, 13, 13, 312, 312, 311, 311, 310, 310, 415, 415, 308];
 
-        const lipPath = new Path2D();
-         const multiplier = isModelImage ? 388 : videoWidth;
+        const upperLipPath = new Path2D();
+         const multiplier = isModelImage ? 500 : videoWidth;
         for (const index of lipIndicesUpper) {
-          lipPath.lineTo(
+          upperLipPath.lineTo(
             landmarks[index].x * multiplier,
             landmarks[index].y * videoHeight
           );
         }
-        for (const index of lipIndicesLower.reverse()) {
-          lipPath.lineTo(
+        upperLipPath.closePath();
+        const lowerLipPath = new Path2D();
+
+        for (const index of lipIndicesLower) {
+          lowerLipPath.lineTo(
             landmarks[index].x * canvasElement.width,
             landmarks[index].y * canvasElement.height
           );
         }
-        lipPath.closePath();
+        lowerLipPath.closePath();
+        const adjustedLipColor = adjustColorIntensity(lipColor, 0.6666);
+        canvasCtx.shadowColor = adjustedLipColor; // Shadow color
+        canvasCtx.shadowBlur = 1; // Shadow blur radius
+        canvasCtx.shadowOffsetX = 0; // Horizontal shadow offset
+        canvasCtx.shadowOffsetY = 0; // Vertical shadow offset
+        canvasCtx.fillStyle = adjustedLipColor;
         if(lipColor){
-          const adjustedLipColor = adjustColorIntensity(lipColor, 0.66666);
-          canvasCtx.shadowColor = adjustedLipColor; // Shadow color
-          canvasCtx.shadowBlur = 1; // Shadow blur radius
-          canvasCtx.shadowOffsetX = 0; // Horizontal shadow offset
-          canvasCtx.shadowOffsetY = 0; // Vertical shadow offset
-          canvasCtx.fillStyle = adjustedLipColor;
-          canvasCtx.fill(lipPath);
-          canvasCtx.shadowColor = 'transparent';
-          canvasCtx.shadowBlur = 0;
-          canvasCtx.shadowOffsetX = 0;
-          canvasCtx.shadowOffsetY = 0;
+          canvasCtx.fill(upperLipPath);
         }
-        
+        if(lipColor){
+          canvasCtx.fill(lowerLipPath);
+        }
+        canvasCtx.shadowColor = 'transparent';
+        canvasCtx.shadowBlur = 0;
+        canvasCtx.shadowOffsetX = 0;
+        canvasCtx.shadowOffsetY = 0;
 
       }
     }
@@ -223,10 +219,10 @@ function App() {
   useEffect(() => {
     processImageWithFacemesh();
   },[modelimg,lipColor])
-  return (
 
-      <div className="App">
-        <div className="p-5 relative w-[100%] h-full  flex">
+  return (
+      <div className="p-5">
+        <div className="p-2 relative w-[100%] h-full  flex">
           <div className="w-[50%]">
             
             {appmodal?
@@ -238,7 +234,7 @@ function App() {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               onClick={()=>setAppmodel(false)}
-              className="h-[30px] w-[30px] right-[30px] relative cursor-pointer float-right z-[99999]"
+              className="h-[30px] w-[30px] right-[30px] relative cursor-pointer float-right z-[99999] text-[#fff] bg-[#000] rounded-2xl p-1"
               >
               <path
               d="M18 6L6 18M6 6L18 18"
@@ -255,7 +251,7 @@ function App() {
               />
               <canvas
                 ref={canvasRef}
-                className="absolute left-[100px] top-[0px]  w-[500px]  z-[9] text-center "
+                className="absolute left-[100px] top-[0px]  w-[500px]  z-[9] text-center"
               ></canvas>
             </>
             :
@@ -289,7 +285,9 @@ function App() {
                 </div>
                 
               </div>:
-              <div>
+              <div className="absolute top-0 flex">
+                
+                <canvas ref={canvasRef} className="max-w-[85%]  cursor-pointer border-2 p-3"></canvas>
                 <svg
                   width="24"
                   height="24"
@@ -297,7 +295,7 @@ function App() {
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   onClick={()=>setModelview(false)}
-                  className="h-[30px] w-[30px] right-[0px] relative cursor-pointer float-right z-[99999] text-[#000] border-2 border-[#000]"
+                  className="h-[30px] w-[30px] right-[0px] relative cursor-pointer float-right z-[99999] text-[#fff] bg-[#000] rounded-2xl p-1"
                 >
                   <path
                   d="M18 6L6 18M6 6L18 18"
@@ -306,9 +304,7 @@ function App() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   />
-              </svg>
-              <canvas ref={canvasRef} className="max-w-[100%] m-[1%] cursor-pointer border-2 p-3"></canvas>
-
+                </svg>
                {/* <img src={modelimg} alt="model1 image" className="max-w-[100%] m-[1%] cursor-pointer border-2 p-3" /> */}
               </div>
               }
@@ -326,13 +322,13 @@ function App() {
             }
           </div>
           <div className="w-[50%]  text-white font-bold rounded-3xl p-5  h-[480px] ">
-          <label className="text-[#000] block text-[20px]">Choose Color</label>
-          <button type="button" className="bg-[#f23b77] w-[50px] h-[50px] rounded-[100%] border-1 border-[#f23b77]" onClick={(e) => setLipColor("#f23b77")}></button>
-          <button type="button" className="bg-[#BB1A4B] w-[50px] h-[50px] rounded-[100%] border-1 border-[#BB1A4B]" onClick={(e) => setLipColor("#BB1A4B")}></button>
-          <button type="button" className="bg-[#A11564] w-[50px] h-[50px] rounded-[100%] border-1 border-[#A11564]" onClick={(e) => setLipColor("#A11564")}></button>
-          <button type="button" className="bg-[#903739] w-[50px] h-[50px] rounded-[100%] border-1 border-[#903739]" onClick={(e) => setLipColor("#903739")}></button>
-          <button type="button" className="bg-[#EB5494] w-[50px] h-[50px] rounded-[100%] border-1 border-[#EB5494]" onClick={(e) => setLipColor("#EB5494")}></button>
-          <button type="button" className="bg-[#FF0000] w-[50px] h-[50px] rounded-[100%] border-1 border-[#FF0000]" onClick={(e) => setLipColor("#FF0000")}></button>
+            <label className="text-[#000] block text-[20px]">Choose Color</label>
+            <button type="button" className="bg-[#f23b77] w-[50px] h-[50px] rounded-[100%] border-1 border-[#f23b77] m-2" onClick={(e) => setLipColor("#f23b77")}></button>
+            <button type="button" className="bg-[#BB1A4B] w-[50px] h-[50px] rounded-[100%] border-1 border-[#BB1A4B] m-2" onClick={(e) => setLipColor("#BB1A4B")}></button>
+            <button type="button" className="bg-[#A11564] w-[50px] h-[50px] rounded-[100%] border-1 border-[#A11564] m-2" onClick={(e) => setLipColor("#A11564")}></button>
+            <button type="button" className="bg-[#903739] w-[50px] h-[50px] rounded-[100%] border-1 border-[#903739] m-2" onClick={(e) => setLipColor("#903739")}></button>
+            <button type="button" className="bg-[#EB5494] w-[50px] h-[50px] rounded-[100%] border-1 border-[#EB5494] m-2" onClick={(e) => setLipColor("#EB5494")}></button>
+            <button type="button" className="bg-[#FF0000] w-[50px] h-[50px] rounded-[100%] border-1 border-[#FF0000] m-2" onClick={(e) => setLipColor("#FF0000")}></button>
           </div>
         </div>
       </div>
